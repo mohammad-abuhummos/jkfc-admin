@@ -48,7 +48,8 @@ export async function login(prevState, formData) {
       path: "/",
     });
 
-    redirect("/dashboard");
+    // Return success instead of throwing a redirect to avoid dev overlay
+    return { ok: true };
   } catch (error) {
     console.log("error", error);
     return { ok: false, message: "Unable to reach login service" };
@@ -56,6 +57,20 @@ export async function login(prevState, formData) {
 }
 
 export async function logout() {
+  // Try to notify backend about logout; ignore failures
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("jkfc_token")?.value;
+    const apiBaseUrl = process.env.API_BASE_URL || "http://localhost:3000";
+    if (token) {
+      await fetch(`${apiBaseUrl}/api/logout`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+    }
+  } catch {}
+
   const cookieStore = await cookies();
   cookieStore.delete("jkfc_token");
   redirect("/login");

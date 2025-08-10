@@ -1,4 +1,10 @@
-export default function Topbar() {
+import { getCurrentUser } from "../lib/auth";
+import UserMenu from "./UserMenu";
+
+export const dynamic = "force-dynamic";
+
+export default async function Topbar() {
+  const user = await getCurrentUser();
   return (
     <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-4 lg:px-6">
       <div className="flex-1">
@@ -7,15 +13,7 @@ export default function Topbar() {
           placeholder="Search Users or Groups..."
         />
       </div>
-      <div className="flex items-center gap-3">
-        <div className="h-9 w-9 rounded-full bg-gray-200" />
-        <div className="leading-tight">
-          <div className="text-sm font-medium">Mostafa</div>
-          <div className="text-[11px] text-gray-500">Admin</div>
-        </div>
-      </div>
+      <UserMenu user={user} />
     </header>
   );
 }
-
-

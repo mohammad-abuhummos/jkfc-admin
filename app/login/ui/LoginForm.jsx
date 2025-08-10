@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormState, useFormStatus } from "react-dom";
+import { useRouter } from "next/navigation";
 import { login } from "../actions";
 
 function SubmitButton() {
@@ -17,7 +18,17 @@ function SubmitButton() {
 }
 
 export default function LoginForm() {
-  const [state, action] = useFormState(login, { ok: true });
+  const router = useRouter();
+  const [state, action] = useFormState(
+    async (prev, formData) => {
+      const result = await login(prev, formData);
+      if (result?.ok) {
+        router.push("/dashboard");
+      }
+      return result;
+    },
+    { ok: true }
+  );
 
   return (
     <form action={action} className="space-y-4">

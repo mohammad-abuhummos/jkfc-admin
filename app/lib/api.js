@@ -7,7 +7,8 @@ function getEnv(name, fallback) {
 
 export async function apiFetch(path, options = {}) {
   const baseUrl = getEnv("API_BASE_URL", "http://localhost:3000");
-  const token = cookies().get("jkfc_token")?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get("jkfc_token")?.value;
 
   if (!token) {
     throw new Error("Not authenticated: missing token");
