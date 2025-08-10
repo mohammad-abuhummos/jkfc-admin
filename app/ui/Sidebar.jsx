@@ -32,7 +32,10 @@ export default function Sidebar() {
           <SidebarLink href="#" icon={LockClosedIcon}>
             Authentication
           </SidebarLink>
-          <SidebarLink href="#" icon={ShieldCheckIcon}>
+          <SidebarLink href="/dashboard/users" icon={UserGroupIcon}>
+            Users
+          </SidebarLink>
+          {/* <SidebarLink href="#" icon={ShieldCheckIcon}>
             Access
           </SidebarLink>
           <SidebarLink href="#" icon={KeyIcon}>
@@ -58,7 +61,7 @@ export default function Sidebar() {
           </SidebarLink>
           <SidebarLink href="#" icon={Cog6ToothIcon}>
             Settings
-          </SidebarLink>
+          </SidebarLink> */}
         </div>
       </nav>
       <div className="mt-auto p-3 text-xs text-gray-400">© JKFC</div>

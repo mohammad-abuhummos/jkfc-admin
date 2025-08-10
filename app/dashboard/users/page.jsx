@@ -1,0 +1,371 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import {
+  PlusIcon,
+  PencilSquareIcon,
+  TrashIcon,
+} from "@heroicons/react/24/outline";
+
+// metadata is not supported in client components
+
+export default function UsersPage() {
+  const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [toast, setToast] = useState(null);
+
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+
+  const showToast = (type, message) => {
+    setToast({ id: Date.now(), type, message });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/users", {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `Failed with ${res.status}`);
+      }
+      const json = await res.json();
+      const list = Array.isArray(json?.data) ? json.data : [];
+      setUsers(list);
+    } catch (e) {
+      setError(e?.message || "Failed to load users");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const onCreate = async (payload) => {
+    try {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (!res.ok || json?.success === false) {
+        throw new Error(json?.message || "Create failed");
+      }
+      showToast("success", json?.message || "User created");
+      setIsCreateOpen(false);
+      await fetchUsers();
+    } catch (e) {
+      showToast("error", e?.message || "Create failed");
+    }
+  };
+
+  const onUpdate = async (id, payload) => {
+    try {
+      const res = await fetch(`/api/users/${id}`, {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (!res.ok || json?.success === false) {
+        throw new Error(json?.message || "Update failed");
+      }
+      showToast("success", json?.message || "User updated");
+      setIsEditOpen(false);
+      setEditingUser(null);
+      await fetchUsers();
+    } catch (e) {
+      showToast("error", e?.message || "Update failed");
+    }
+  };
+
+  const onDelete = async (id) => {
+    try {
+      const res = await fetch(`/api/users/${id}`, {
+        method: "DELETE",
+        headers: { Accept: "application/json" },
+      });
+      const json = await res.json();
+      if (!res.ok || json?.success === false) {
+        throw new Error(json?.message || "Delete failed");
+      }
+      showToast("success", json?.message || "User deleted");
+      await fetchUsers();
+    } catch (e) {
+      showToast("error", e?.message || "Delete failed");
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-800">Users</h1>
+          <p className="text-sm text-gray-500">Manage users and their roles</p>
+        </div>
+        <button
+          onClick={() => setIsCreateOpen(true)}
+          className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 text-white px-3 py-2 text-sm font-medium hover:bg-emerald-700"
+        >
+          <PlusIcon className="h-4 w-4" />
+          New User
+        </button>
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="grid grid-cols-12 bg-gray-50 text-[11px] uppercase tracking-wide text-gray-500 border-b">
+          <div className="col-span-1 py-2 px-5">ID</div>
+          <div className="col-span-3 py-2 px-5">Name</div>
+          <div className="col-span-2 py-2 px-5">Username</div>
+          <div className="col-span-3 py-2 px-5">Email</div>
+          <div className="col-span-1 py-2 px-5">Role</div>
+          <div className="col-span-2 py-2 px-5 text-right">Actions</div>
+        </div>
+        {isLoading ? (
+          <div className="px-5 py-10 text-center text-sm text-gray-500">
+            Loading…
+          </div>
+        ) : error ? (
+          <div className="px-5 py-10 text-center text-sm text-red-600">
+            {error}
+          </div>
+        ) : users.length === 0 ? (
+          <div className="px-5 py-10 text-center text-sm text-gray-500">
+            No users
+          </div>
+        ) : (
+          <ul className="divide-y divide-gray-100">
+            {users.map((u) => (
+              <li
+                key={u.id}
+                className="grid grid-cols-12 items-center px-5 py-3 text-sm"
+              >
+                <div className="col-span-1 text-gray-500">{u.id}</div>
+                <div className="col-span-3 font-medium text-gray-900 truncate">
+                  {u.name}
+                </div>
+                <div className="col-span-2 text-gray-700 truncate">
+                  {u.username}
+                </div>
+                <div className="col-span-3 text-gray-700 truncate">
+                  {u.email}
+                </div>
+                <div className="col-span-1">
+                  <span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                    {u.role}
+                  </span>
+                </div>
+                <div className="col-span-2 text-right space-x-2">
+                  <button
+                    onClick={() => {
+                      setEditingUser(u);
+                      setIsEditOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs hover:bg-gray-50"
+                  >
+                    <PencilSquareIcon className="h-4 w-4" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => onDelete(u.id)}
+                    className="inline-flex items-center gap-1 rounded-md border border-red-200 text-red-700 px-2 py-1 text-xs hover:bg-red-50"
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                    Delete
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {isCreateOpen && (
+        <UserModal
+          title="Create User"
+          onClose={() => setIsCreateOpen(false)}
+          onSubmit={onCreate}
+          submitLabel="Create"
+        />
+      )}
+
+      {isEditOpen && editingUser && (
+        <UserModal
+          title="Edit User"
+          user={editingUser}
+          onClose={() => {
+            setIsEditOpen(false);
+            setEditingUser(null);
+          }}
+          onSubmit={(payload) => onUpdate(editingUser.id, payload)}
+          submitLabel="Save"
+        />
+      )}
+
+      {toast && <Toast type={toast.type} message={toast.message} />}
+    </div>
+  );
+}
+
+function Toast({ type, message }) {
+  const classes =
+    type === "success"
+      ? "bg-emerald-600 text-white"
+      : type === "error"
+      ? "bg-red-600 text-white"
+      : "bg-gray-800 text-white";
+
+  return (
+    <div
+      className={`fixed bottom-6 right-6 rounded-lg px-4 py-2 shadow-lg ${classes}`}
+    >
+      <div className="text-sm font-medium">{message}</div>
+    </div>
+  );
+}
+
+function UserModal({ title, user, onClose, onSubmit, submitLabel }) {
+  const [name, setName] = useState(user?.name || "");
+  const [username, setUsername] = useState(user?.username || "");
+  const [email, setEmail] = useState(user?.email || "");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState(user?.role || "employee");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+
+  const canSubmit = useMemo(() => {
+    if (!name || !username || !email || !role) return false;
+    return true;
+  }, [name, username, email, role]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!canSubmit) return;
+    setPending(true);
+    setError("");
+    try {
+      const payload = { name, username, email, role };
+      if (password) payload.password = password;
+      await onSubmit(payload);
+    } catch (e) {
+      setError(e?.message || "Action failed");
+    } finally {
+      setPending(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+      <div className="w-full max-w-lg rounded-xl bg-white shadow-lg border border-gray-100 overflow-hidden">
+        <div className="px-5 py-3 border-b flex items-center justify-between">
+          <div className="text-sm font-semibold text-gray-800">{title}</div>
+          <button
+            onClick={onClose}
+            className="rounded-md px-2 py-1 text-xs border border-gray-200 hover:bg-gray-50"
+          >
+            Close
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-700">Name</label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="w-full h-10 rounded-lg border border-gray-200 px-3 outline-none focus:ring-2 focus:ring-emerald-500 text-black"
+                placeholder="Full name"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-700">
+                Username
+              </label>
+              <input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                className="w-full h-10 rounded-lg border border-gray-200 px-3 outline-none focus:ring-2 focus:ring-emerald-500 text-black"
+                placeholder="Username"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-700">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full h-10 rounded-lg border border-gray-200 px-3 outline-none focus:ring-2 focus:ring-emerald-500 text-black"
+                placeholder="name@example.com"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-700">Role</label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full h-10 rounded-lg border border-gray-200 px-3 outline-none focus:ring-2 focus:ring-emerald-500 text-black bg-white"
+              >
+                <option value="employee">employee</option>
+                <option value="admin">admin</option>
+                <option value="superadmin">superadmin</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-gray-700">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full h-10 rounded-lg border border-gray-200 px-3 outline-none focus:ring-2 focus:ring-emerald-500 text-black"
+              placeholder={
+                user ? "Leave blank to keep current" : "Set a password"
+              }
+            />
+          </div>
+
+          {error ? <div className="text-xs text-red-600">{error}</div> : null}
+
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-gray-200 px-3 py-2 text-sm hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={pending || !canSubmit}
+              className="rounded-lg bg-emerald-600 text-white px-3 py-2 text-sm font-medium hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {pending ? "Please wait…" : submitLabel}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
