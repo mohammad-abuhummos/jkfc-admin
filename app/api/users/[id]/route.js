@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { apiFetch } from "@/app/lib/api";
 
 export async function GET(request, { params }) {
@@ -37,6 +38,24 @@ export async function PUT(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     const { id } = params;
+    // Prevent deleting self by comparing with current user id
+    try {
+      const cookieStore = await cookies();
+      const token = cookieStore.get("jkfc_token")?.value;
+      if (token) {
+        const me = await apiFetch("/api/user", {
+          method: "GET",
+          headers: { Accept: "application/json" },
+        });
+        const myId = me?.data?.id ?? me?.id;
+        if (myId && String(myId) === String(id)) {
+          return NextResponse.json(
+            { success: false, message: "You cannot delete your own account." },
+            { status: 403 }
+          );
+        }
+      }
+    } catch {}
     const json = await apiFetch(`/api/users/${id}`, {
       method: "DELETE",
       headers: { Accept: "application/json" },

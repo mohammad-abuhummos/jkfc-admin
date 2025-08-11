@@ -26,6 +26,7 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
 
@@ -59,6 +60,19 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchUsers();
+    // fetch current user id to disable self-delete
+    (async () => {
+      try {
+        const res = await fetch("/api/self", {
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        const id = json?.data?.id ?? json?.id ?? null;
+        if (id) setCurrentUserId(Number(id));
+      } catch {}
+    })();
   }, []);
 
   const visibleUsers = useMemo(() => {
@@ -247,7 +261,14 @@ export default function UsersPage() {
                       setUserToDelete(u);
                       setIsConfirmOpen(true);
                     }}
-                    className="inline-flex items-center gap-1 rounded-md border border-red-200 text-red-700 px-2 py-1 text-xs hover:bg-red-50"
+                    disabled={
+                      currentUserId != null && Number(u.id) === currentUserId
+                    }
+                    className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs ${
+                      currentUserId != null && Number(u.id) === currentUserId
+                        ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                        : "border-red-200 text-red-700 hover:bg-red-50"
+                    }`}
                   >
                     <TrashIcon className="h-4 w-4" />
                     Delete

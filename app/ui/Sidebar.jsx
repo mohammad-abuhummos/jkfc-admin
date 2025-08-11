@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import {
   HomeIcon,
   LockClosedIcon,
@@ -15,6 +18,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 export default function Sidebar() {
+  const pathname = usePathname();
   return (
     <aside className="hidden lg:flex w-64 min-h-screen flex-col border-r border-gray-100 bg-white">
       <div className="h-16 flex items-center gap-3 px-5 border-b border-gray-100">
@@ -25,14 +29,22 @@ export default function Sidebar() {
         </div>
       </div>
       <nav className="p-3">
-        <SidebarLink href="/dashboard" active icon={HomeIcon}>
+        <SidebarLink
+          href="/dashboard"
+          active={pathname === "/dashboard"}
+          icon={HomeIcon}
+        >
           Dashboard
         </SidebarLink>
         <div className="mt-2 space-y-1">
-          <SidebarLink href="#" icon={LockClosedIcon}>
+          {/* <SidebarLink href="#" icon={LockClosedIcon}>
             Authentication
-          </SidebarLink>
-          <SidebarLink href="/dashboard/users" icon={UserGroupIcon}>
+          </SidebarLink> */}
+          <SidebarLink
+            href="/dashboard/users"
+            icon={UserGroupIcon}
+            active={pathname?.startsWith("/dashboard/users")}
+          >
             Users
           </SidebarLink>
           {/* <SidebarLink href="#" icon={ShieldCheckIcon}>
