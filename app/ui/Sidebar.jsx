@@ -55,6 +55,20 @@ export default function Sidebar() {
           >
             Players
           </SidebarLink>
+          <SidebarLink
+            href="/dashboard/groups"
+            icon={UserGroupIcon}
+            active={pathname?.startsWith("/dashboard/groups")}
+          >
+            Groups
+          </SidebarLink>
+          <SidebarLink
+            href="/dashboard/courses"
+            icon={BookOpenIcon}
+            active={pathname?.startsWith("/dashboard/courses")}
+          >
+            Courses
+          </SidebarLink>
           {/* <SidebarLink href="#" icon={ShieldCheckIcon}>
             Access
           </SidebarLink>
