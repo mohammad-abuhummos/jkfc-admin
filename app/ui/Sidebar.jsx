@@ -12,6 +12,7 @@ import {
   Cog6ToothIcon,
   BookOpenIcon,
   UserGroupIcon,
+  UsersIcon,
   WrenchScrewdriverIcon,
   ClipboardDocumentCheckIcon,
   ShieldCheckIcon,
@@ -46,6 +47,13 @@ export default function Sidebar() {
             active={pathname?.startsWith("/dashboard/users")}
           >
             Users
+          </SidebarLink>
+          <SidebarLink
+            href="/dashboard/players"
+            icon={UserGroupIcon}
+            active={pathname?.startsWith("/dashboard/players")}
+          >
+            Players
           </SidebarLink>
           {/* <SidebarLink href="#" icon={ShieldCheckIcon}>
             Access
