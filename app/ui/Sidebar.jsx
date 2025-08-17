@@ -69,6 +69,34 @@ export default function Sidebar() {
           >
             Courses
           </SidebarLink>
+          <SidebarLink
+            href="/dashboard/registrations"
+            icon={ClipboardDocumentCheckIcon}
+            active={pathname?.startsWith("/dashboard/registrations")}
+          >
+            Registrations
+          </SidebarLink>
+          <SidebarLink
+            href="/dashboard/tryouts"
+            icon={ClipboardDocumentCheckIcon}
+            active={pathname?.startsWith("/dashboard/tryouts")}
+          >
+            Tryouts
+          </SidebarLink>
+          <SidebarLink
+            href="/dashboard/payments"
+            icon={DocumentTextIcon}
+            active={pathname?.startsWith("/dashboard/payments")}
+          >
+            Payments
+          </SidebarLink>
+          <SidebarLink
+            href="/dashboard/attendance"
+            icon={CalendarDaysIcon}
+            active={pathname?.startsWith("/dashboard/attendance")}
+          >
+            Attendance
+          </SidebarLink>
           {/* <SidebarLink href="#" icon={ShieldCheckIcon}>
             Access
           </SidebarLink>
