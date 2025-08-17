@@ -97,6 +97,13 @@ export default function Sidebar() {
           >
             Attendance
           </SidebarLink>
+          <SidebarLink
+            href="/dashboard/uniforms"
+            icon={ClipboardDocumentCheckIcon}
+            active={pathname?.startsWith("/dashboard/uniforms")}
+          >
+            Uniforms
+          </SidebarLink>
           {/* <SidebarLink href="#" icon={ShieldCheckIcon}>
             Access
           </SidebarLink>
