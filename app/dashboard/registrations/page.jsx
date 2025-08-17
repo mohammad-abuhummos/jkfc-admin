@@ -195,6 +195,11 @@ export default function RegistrationsPage() {
 function EnrollModal({ registration, onClose, onSuccess, onError }) {
   const [courseScheduleId, setCourseScheduleId] = useState("");
   const [groupId, setGroupId] = useState("");
+  const [schedules, setSchedules] = useState([]);
+  const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
+  const [groups, setGroups] = useState([]);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(false);
+  const [optionsError, setOptionsError] = useState("");
   const [requestUniform, setRequestUniform] = useState("false");
   const [uniformType, setUniformType] = useState("");
   const [uniformSizeId, setUniformSizeId] = useState("");
@@ -207,6 +212,53 @@ function EnrollModal({ registration, onClose, onSuccess, onError }) {
       return false;
     return true;
   }, [courseScheduleId, groupId, requestUniform, uniformType, uniformSizeId]);
+
+  useEffect(() => {
+    (async () => {
+      setIsLoadingSchedules(true);
+      setOptionsError("");
+      try {
+        const res = await fetch("/api/schedules", {
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        });
+        const json = await res.json();
+        if (!res.ok || json?.success === false) {
+          throw new Error(json?.message || "Failed to load schedules");
+        }
+        const list = Array.isArray(json?.data) ? json.data : [];
+        setSchedules(list);
+      } catch (e) {
+        setOptionsError(e?.message || "Failed to load schedules");
+      } finally {
+        setIsLoadingSchedules(false);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!courseScheduleId) return;
+    setGroupId("");
+    (async () => {
+      setIsLoadingGroups(true);
+      try {
+        const res = await fetch("/api/groups", {
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        });
+        const json = await res.json();
+        if (!res.ok || json?.success === false) {
+          throw new Error(json?.message || "Failed to load groups");
+        }
+        const list = Array.isArray(json?.data) ? json.data : [];
+        setGroups(list);
+      } catch (e) {
+        setOptionsError(e?.message || "Failed to load groups");
+      } finally {
+        setIsLoadingGroups(false);
+      }
+    })();
+  }, [courseScheduleId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -265,27 +317,48 @@ function EnrollModal({ registration, onClose, onSuccess, onError }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-xs font-medium text-gray-700">
-                Course Schedule ID
+                Course Schedule
               </label>
-              <input
+              <select
                 value={courseScheduleId}
                 onChange={(e) => setCourseScheduleId(e.target.value)}
                 required
-                className="w-full h-10 rounded-lg border border-gray-200 px-3 outline-none focus:ring-2 focus:ring-emerald-500 text-black"
-                placeholder="e.g. 1"
-              />
+                className="w-full h-10 rounded-lg border border-gray-200 px-3 outline-none focus:ring-2 focus:ring-emerald-500 text-black bg-white"
+              >
+                <option value="" disabled>
+                  {isLoadingSchedules ? "Loading…" : "Select a schedule"}
+                </option>
+                {schedules.map((s) => (
+                  <option key={s.id} value={String(s.id)}>
+                    {`${s.name || "Schedule"}${
+                      s.course?.title ? " — " + s.course.title : ""
+                    } (#${s.id})`}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-700">
-                Group ID
-              </label>
-              <input
+              <label className="text-xs font-medium text-gray-700">Group</label>
+              <select
                 value={groupId}
                 onChange={(e) => setGroupId(e.target.value)}
                 required
-                className="w-full h-10 rounded-lg border border-gray-200 px-3 outline-none focus:ring-2 focus:ring-emerald-500 text-black"
-                placeholder="e.g. 2"
-              />
+                disabled={!courseScheduleId || isLoadingGroups}
+                className="w-full h-10 rounded-lg border border-gray-200 px-3 outline-none focus:ring-2 focus:ring-emerald-500 text-black bg-white disabled:bg-gray-50 disabled:text-gray-400"
+              >
+                <option value="" disabled>
+                  {!courseScheduleId
+                    ? "Select schedule first"
+                    : isLoadingGroups
+                    ? "Loading…"
+                    : "Select a group"}
+                </option>
+                {groups.map((g) => (
+                  <option key={g.id} value={String(g.id)}>
+                    {`${g.name || "Group"} (#${g.id})`}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-gray-700">
@@ -327,7 +400,9 @@ function EnrollModal({ registration, onClose, onSuccess, onError }) {
               </>
             )}
           </div>
-
+          {optionsError ? (
+            <div className="text-xs text-red-600">{optionsError}</div>
+          ) : null}
           {error ? <div className="text-xs text-red-600">{error}</div> : null}
 
           <div className="flex items-center justify-end gap-2 pt-1">

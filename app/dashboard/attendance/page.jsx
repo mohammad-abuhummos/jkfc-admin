@@ -14,6 +14,9 @@ export default function AttendancePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState(null);
+  const [schedules, setSchedules] = useState([]);
+  const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
+  const [optionsError, setOptionsError] = useState("");
 
   const showToast = (type, message) => {
     setToast({ id: Date.now(), type, message });
@@ -46,6 +49,32 @@ export default function AttendancePage() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    (async () => {
+      setIsLoadingSchedules(true);
+      setOptionsError("");
+      try {
+        const res = await fetch("/api/schedules", {
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        });
+        const json = await res.json();
+        if (!res.ok || json?.success === false) {
+          throw new Error(json?.message || "Failed to load schedules");
+        }
+        const list = Array.isArray(json?.data) ? json.data : [];
+        setSchedules(list);
+      } catch (e) {
+        const msg = e?.message || "Failed to load schedules";
+        setOptionsError(msg);
+        setToast({ id: Date.now(), type: "error", message: msg });
+        setTimeout(() => setToast(null), 3000);
+      } finally {
+        setIsLoadingSchedules(false);
+      }
+    })();
+  }, []);
 
   const updateLocal = (enrollmentId, field, value) => {
     setItems((rows) =>
@@ -85,12 +114,22 @@ export default function AttendancePage() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
-        <input
+        <select
           value={scheduleId}
           onChange={(e) => setScheduleId(e.target.value)}
-          className="h-10 rounded-lg border border-gray-200 px-3 outline-none focus:ring-2 focus:ring-emerald-500 text-black"
-          placeholder="Schedule ID"
-        />
+          className="h-10 rounded-lg border border-gray-200 px-3 outline-none focus:ring-2 focus:ring-emerald-500 text-black bg-white"
+        >
+          <option value="" disabled>
+            {isLoadingSchedules ? "Loading…" : "Select a schedule"}
+          </option>
+          {schedules.map((s) => (
+            <option key={s.id} value={String(s.id)}>
+              {`${s.name || "Schedule"}${
+                s.course?.title ? " — " + s.course.title : ""
+              } (#${s.id})`}
+            </option>
+          ))}
+        </select>
         <input
           type="date"
           value={sessionDate}
@@ -114,6 +153,9 @@ export default function AttendancePage() {
           Save Attendance
         </button>
       </div>
+      {optionsError ? (
+        <div className="text-xs text-red-600">{optionsError}</div>
+      ) : null}
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="grid grid-cols-12 bg-gray-50 text-sm tracking-wide text-gray-500 border-b py-2">
