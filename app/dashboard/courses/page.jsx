@@ -294,7 +294,7 @@ export default function CoursesPage() {
 }
 
 function CourseRow({ course, onEdit, onDelete }) {
-  const [isSchedulesOpen, setIsSchedulesOpen] = useState(false);
+  const [isBranchesOpen, setIsBranchesOpen] = useState(false);
   return (
     <li className="px-5 py-3 text-sm">
       <div className="grid grid-cols-12 items-center">
@@ -309,7 +309,7 @@ function CourseRow({ course, onEdit, onDelete }) {
         </div>
         <div className="col-span-2 text-right space-x-2">
           <button
-            onClick={() => setIsSchedulesOpen((v) => !v)}
+            onClick={() => setIsBranchesOpen(true)}
             className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs hover:bg-gray-50"
           >
             Branches
@@ -330,8 +330,277 @@ function CourseRow({ course, onEdit, onDelete }) {
           </button>
         </div>
       </div>
-      {isSchedulesOpen && <CourseSchedules courseId={course.id} />}
+      {isBranchesOpen && (
+        <BranchesModal
+          courseId={course.id}
+          onClose={() => setIsBranchesOpen(false)}
+        />
+      )}
     </li>
+  );
+}
+
+function BranchesModal({ courseId, onClose }) {
+  const [schedules, setSchedules] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [toDelete, setToDelete] = useState(null);
+
+  const fetchSchedules = async () => {
+    setIsLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/courses/${courseId}/schedules`, {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+      const json = await res.json();
+      const list = Array.isArray(json?.data) ? json.data : [];
+      setSchedules(list);
+    } catch (e) {
+      setError(e?.message || "Failed to load schedules");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSchedules();
+  }, []);
+
+  const onCreate = async (payload) => {
+    const res = await fetch(`/api/courses/${courseId}/schedules`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    if (!res.ok || json?.success === false)
+      throw new Error(json?.message || "Create failed");
+    await fetchSchedules();
+    setIsCreateOpen(false);
+  };
+
+  const onUpdate = async (id, payload) => {
+    const res = await fetch(`/api/schedules/${id}`, {
+      method: "PUT",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    if (!res.ok || json?.success === false)
+      throw new Error(json?.message || "Update failed");
+    await fetchSchedules();
+    setEditing(null);
+  };
+
+  const onDelete = async (id) => {
+    const res = await fetch(`/api/schedules/${id}`, {
+      method: "DELETE",
+      headers: { Accept: "application/json" },
+    });
+    const json = await res.json();
+    if (!res.ok || json?.success === false)
+      throw new Error(json?.message || "Delete failed");
+    await fetchSchedules();
+    setToDelete(null);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+      <div className="w-full max-w-5xl max-h-[85vh] rounded-xl bg-white shadow-lg border border-gray-100 overflow-hidden flex flex-col">
+        <div className="px-5 py-3 border-b flex items-center justify-between shrink-0">
+          <div className="text-sm font-semibold text-gray-800">Branches</div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={fetchSchedules}
+              className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs hover:bg-gray-50"
+            >
+              <ArrowPathIcon
+                className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+              />
+              Refresh
+            </button>
+            <button
+              onClick={() => setIsCreateOpen(true)}
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 text-white px-3 h-8 text-xs font-medium hover:bg-emerald-700"
+            >
+              <PlusIcon className="h-4 w-4" />
+              New Branch
+            </button>
+            <button
+              onClick={onClose}
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs border border-gray-200 hover:bg-gray-50"
+            >
+              <XMarkIcon className="h-4 w-4" />
+              Close
+            </button>
+          </div>
+        </div>
+        <div className="p-5 flex-1 min-h-0 overflow-y-auto">
+          {isLoading ? (
+            <BranchSkeletonGrid />
+          ) : error ? (
+            <div className="text-sm text-red-600">{error}</div>
+          ) : schedules.length === 0 ? (
+            <div className="text-sm text-gray-500">No branches</div>
+          ) : (
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {schedules.map((s) => (
+                <BranchCard
+                  key={s.id}
+                  schedule={s}
+                  onEdit={() => setEditing(s)}
+                  onDelete={() => setToDelete(s)}
+                />
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      {isCreateOpen && (
+        <ScheduleModal
+          title="Create Branch"
+          onClose={() => setIsCreateOpen(false)}
+          onSubmit={onCreate}
+          submitLabel="Create"
+        />
+      )}
+
+      {editing && (
+        <ScheduleModal
+          title="Edit Branch"
+          schedule={editing}
+          onClose={() => setEditing(null)}
+          onSubmit={(payload) => onUpdate(editing.id, payload)}
+          submitLabel="Save"
+        />
+      )}
+
+      {toDelete && (
+        <ConfirmModal
+          title="Delete Branch"
+          message={`Delete branch "${toDelete.name}" (#${toDelete.id})? This cannot be undone.`}
+          confirmLabel="Delete"
+          onCancel={() => setToDelete(null)}
+          onConfirm={() => onDelete(toDelete.id)}
+        />
+      )}
+    </div>
+  );
+}
+
+function BranchCard({ schedule, onEdit, onDelete }) {
+  const yes = (
+    <span className="inline-flex items-center rounded-md bg-emerald-50 text-emerald-700 px-2 py-0.5 text-[11px] font-medium">
+      Yes
+    </span>
+  );
+  const no = (
+    <span className="inline-flex items-center rounded-md bg-gray-100 text-gray-700 px-2 py-0.5 text-[11px] font-medium">
+      No
+    </span>
+  );
+  return (
+    <li className="rounded-lg border border-gray-100 shadow-sm p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-sm font-semibold text-gray-900">
+            {schedule.name}
+          </div>
+          <div className="text-[11px] text-gray-500">ID #{schedule.id}</div>
+        </div>
+        <div className="shrink-0 space-x-2">
+          <button
+            onClick={onEdit}
+            className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs hover:bg-gray-50"
+          >
+            <PencilSquareIcon className="h-4 w-4" /> Edit
+          </button>
+          <button
+            onClick={onDelete}
+            className="inline-flex items-center gap-1 rounded-md border border-red-200 text-red-700 px-2 py-1 text-xs hover:bg-red-50"
+          >
+            <TrashIcon className="h-4 w-4" /> Delete
+          </button>
+        </div>
+      </div>
+      <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs text-gray-700">
+        <Info label="Sessions" value={schedule.number_of_sessions} />
+        <Info label="Max players" value={schedule.max_players} />
+        <Info label="Total price" value={`${schedule.total_price} JOD`} />
+        <Info
+          label="Partial allowed"
+          value={schedule.is_partial_payment_allowed ? yes : no}
+        />
+        <Info label="First %" value={schedule.first_payment_percentage} />
+        <Info label="Second %" value={schedule.second_payment_percentage} />
+        <Info label="Start" value={toYMD(schedule.start_date)} />
+        <Info label="End" value={toYMD(schedule.end_date)} />
+      </div>
+      <div className="mt-3">
+        <div className="text-xs font-medium text-gray-700">Weekly schedule</div>
+        <ul className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-gray-700">
+          {(schedule.schedule_data || []).map((row, idx) => (
+            <li key={idx} className="rounded border border-gray-100 px-2 py-1">
+              <span className="font-medium">{row.day}</span>: {row.start_time} –{" "}
+              {row.end_time}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </li>
+  );
+}
+
+function Info({ label, value }) {
+  return (
+    <div>
+      <div className="text-[10px] uppercase tracking-wide text-gray-400">
+        {label}
+      </div>
+      <div className="text-gray-900 font-medium">{value ?? "-"}</div>
+    </div>
+  );
+}
+
+function BranchSkeletonGrid() {
+  const items = new Array(4).fill(null);
+  return (
+    <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {items.map((_, i) => (
+        <li
+          key={i}
+          className="rounded-lg border border-gray-100 shadow-sm p-4 animate-pulse"
+        >
+          <div className="flex items-start justify-between">
+            <div className="h-4 w-24 rounded bg-gray-100" />
+            <div className="h-6 w-24 rounded bg-gray-100" />
+          </div>
+          <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="h-3 w-20 rounded bg-gray-100" />
+            <div className="h-3 w-16 rounded bg-gray-100" />
+            <div className="h-3 w-24 rounded bg-gray-100" />
+            <div className="h-3 w-28 rounded bg-gray-100" />
+            <div className="h-3 w-16 rounded bg-gray-100" />
+            <div className="h-3 w-16 rounded bg-gray-100" />
+          </div>
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="h-8 w-full rounded bg-gray-100" />
+            <div className="h-8 w-full rounded bg-gray-100" />
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }
 
