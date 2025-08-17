@@ -9,6 +9,9 @@ import {
   PlusIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import ExportMenu from "../../ui/ExportMenu";
+import { pushNotification } from "../../ui/Notifications";
+import ErrorAlert from "../../ui/ErrorAlert";
 
 export default function UniformsPage() {
   return (
@@ -33,6 +36,13 @@ function UniformRequests() {
 
   const showToast = (type, message) => {
     setToast({ id: Date.now(), type, message });
+    try {
+      pushNotification({
+        type,
+        title: type === "error" ? "Error" : "Notice",
+        message,
+      });
+    } catch {}
     setTimeout(() => setToast(null), 3000);
   };
 
@@ -146,6 +156,20 @@ function UniformRequests() {
               placeholder="Search requests"
             />
           </div>
+          <ExportMenu
+            rows={visible}
+            columns={[
+              "id",
+              "player.first_name_en",
+              "type",
+              "uniform_size.name",
+              "quantity",
+              "status",
+              "payment.status",
+            ]}
+            filename="uniform_requests"
+            title="Export"
+          />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -188,9 +212,7 @@ function UniformRequests() {
         {isLoading ? (
           <SkeletonList cols={[1, 2, 1, 1, 1, 2, 2, 3]} />
         ) : error ? (
-          <div className="px-5 py-10 text-center text-sm text-red-600">
-            {error}
-          </div>
+          <ErrorAlert message={error} />
         ) : visible.length === 0 ? (
           <div className="px-5 py-10 text-center text-sm text-gray-500">
             No requests
@@ -285,6 +307,13 @@ function UniformSizes() {
 
   const showToast = (type, message) => {
     setToast({ id: Date.now(), type, message });
+    try {
+      pushNotification({
+        type,
+        title: type === "error" ? "Error" : "Notice",
+        message,
+      });
+    } catch {}
     setTimeout(() => setToast(null), 3000);
   };
 
@@ -368,7 +397,7 @@ function UniformSizes() {
           <h2 className="text-xl font-semibold text-gray-900">Uniform Sizes</h2>
           <p className="text-sm text-gray-500">Manage sizes and prices</p>
         </div>
-        <div className="space-x-2">
+        <div className="space-x-2 flex items-center">
           <button
             onClick={() => setIsCreateOpen(true)}
             className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 text-white px-3 h-9 text-xs font-medium hover:bg-emerald-700"
@@ -380,6 +409,12 @@ function UniformSizes() {
             onError={(m) =>
               setToast({ id: Date.now(), type: "error", message: m })
             }
+          />
+          <ExportMenu
+            rows={items}
+            columns={["id", "name"]}
+            filename="uniform_sizes"
+            title="Export"
           />
         </div>
       </div>
@@ -393,9 +428,7 @@ function UniformSizes() {
         {isLoading ? (
           <SkeletonList cols={[1, 6, 5]} />
         ) : error ? (
-          <div className="px-5 py-10 text-center text-sm text-red-600">
-            {error}
-          </div>
+          <ErrorAlert message={error} />
         ) : items.length === 0 ? (
           <div className="px-5 py-10 text-center text-sm text-gray-500">
             No sizes

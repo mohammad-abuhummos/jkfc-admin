@@ -7,6 +7,9 @@ import {
   ExclamationTriangleIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
+import ExportMenu from "../../ui/ExportMenu";
+import { pushNotification } from "../../ui/Notifications";
+import ErrorAlert from "../../ui/ErrorAlert";
 
 export default function TryoutsPage() {
   const [items, setItems] = useState([]);
@@ -18,6 +21,13 @@ export default function TryoutsPage() {
 
   const showToast = (type, message) => {
     setToast({ id: Date.now(), type, message });
+    try {
+      pushNotification({
+        type,
+        title: type === "error" ? "Error" : "Notice",
+        message,
+      });
+    } catch {}
     setTimeout(() => setToast(null), 3000);
   };
 
@@ -108,6 +118,22 @@ export default function TryoutsPage() {
               placeholder="Search tryouts"
             />
           </div>
+          <ExportMenu
+            rows={visible}
+            columns={[
+              "id",
+              "first_name_en",
+              "middle_name_en",
+              "last_name_en",
+              "first_name_ar",
+              "middle_name_ar",
+              "last_name_ar",
+              "main_phone",
+              "status",
+            ]}
+            filename="tryouts"
+            title="Export"
+          />
           <button
             onClick={refresh}
             disabled={isRefreshing}
@@ -133,9 +159,7 @@ export default function TryoutsPage() {
         {isLoading ? (
           <SkeletonList />
         ) : error ? (
-          <div className="px-5 py-10 text-center text-sm text-red-600">
-            {error}
-          </div>
+          <ErrorAlert message={error} />
         ) : visible.length === 0 ? (
           <div className="px-5 py-10 text-center text-sm text-gray-500">
             No tryouts

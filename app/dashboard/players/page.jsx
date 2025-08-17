@@ -11,6 +11,9 @@ import {
   XMarkIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
+import ExportMenu from "../../ui/ExportMenu";
+import { pushNotification } from "../../ui/Notifications";
+import ErrorAlert from "../../ui/ErrorAlert";
 
 export default function PlayersPage() {
   const [players, setPlayers] = useState([]);
@@ -31,6 +34,13 @@ export default function PlayersPage() {
 
   const showToast = (type, message) => {
     setToast({ id: Date.now(), type, message });
+    try {
+      pushNotification({
+        type,
+        title: type === "error" ? "Error" : "Notice",
+        message,
+      });
+    } catch {}
     setTimeout(() => setToast(null), 3000);
   };
 
@@ -55,7 +65,15 @@ export default function PlayersPage() {
       setPlayers(list);
       setMeta(json?.meta || json?.data || null);
     } catch (e) {
-      setError(e?.message || "Failed to load players");
+      const msg = e?.message || "Failed to load players";
+      setError(msg);
+      try {
+        pushNotification({
+          type: "error",
+          title: "Load players failed",
+          message: msg,
+        });
+      } catch {}
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -172,6 +190,22 @@ export default function PlayersPage() {
             />
           </div>
           <div className="flex gap-2">
+            <ExportMenu
+              rows={visiblePlayers}
+              columns={[
+                "id",
+                "first_name_en",
+                "middle_name_en",
+                "last_name_en",
+                "first_name_ar",
+                "middle_name_ar",
+                "last_name_ar",
+                "main_phone",
+                "status",
+              ]}
+              filename="players"
+              title="Export"
+            />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -216,9 +250,7 @@ export default function PlayersPage() {
         {isLoading ? (
           <SkeletonList />
         ) : error ? (
-          <div className="px-5 py-10 text-center text-sm text-red-600">
-            {error}
-          </div>
+          <ErrorAlert message={error} />
         ) : visiblePlayers.length === 0 ? (
           <div className="px-5 py-10 text-center text-sm text-gray-500">
             No players

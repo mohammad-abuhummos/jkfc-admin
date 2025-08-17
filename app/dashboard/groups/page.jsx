@@ -11,6 +11,9 @@ import {
   XMarkIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
+import ExportMenu from "../../ui/ExportMenu";
+import { pushNotification } from "../../ui/Notifications";
+import ErrorAlert from "../../ui/ErrorAlert";
 
 export default function GroupsPage() {
   const [groups, setGroups] = useState([]);
@@ -29,6 +32,13 @@ export default function GroupsPage() {
 
   const showToast = (type, message) => {
     setToast({ id: Date.now(), type, message });
+    try {
+      pushNotification({
+        type,
+        title: type === "error" ? "Error" : "Notice",
+        message,
+      });
+    } catch {}
     setTimeout(() => setToast(null), 3000);
   };
 
@@ -48,7 +58,15 @@ export default function GroupsPage() {
       const list = Array.isArray(json?.data) ? json.data : [];
       setGroups(list.reverse());
     } catch (e) {
-      setError(e?.message || "Failed to load groups");
+      const msg = e?.message || "Failed to load groups";
+      setError(msg);
+      try {
+        pushNotification({
+          type: "error",
+          title: "Load groups failed",
+          message: msg,
+        });
+      } catch {}
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -157,6 +175,18 @@ export default function GroupsPage() {
             />
           </div>
           <div className="flex gap-2">
+            <ExportMenu
+              rows={visibleGroups}
+              columns={[
+                "id",
+                "name",
+                "min_age",
+                "max_age",
+                "enrollments_count",
+              ]}
+              filename="groups"
+              title="Export"
+            />
             <button
               onClick={refreshList}
               disabled={isRefreshing}
@@ -190,9 +220,7 @@ export default function GroupsPage() {
         {isLoading ? (
           <SkeletonList />
         ) : error ? (
-          <div className="px-5 py-10 text-center text-sm text-red-600">
-            {error}
-          </div>
+          <ErrorAlert message={error} />
         ) : visibleGroups.length === 0 ? (
           <div className="px-5 py-10 text-center text-sm text-gray-500">
             No groups

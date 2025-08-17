@@ -9,6 +9,9 @@ import {
   PlusIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import ExportMenu from "../../ui/ExportMenu";
+import { pushNotification } from "../../ui/Notifications";
+import ErrorAlert from "../../ui/ErrorAlert";
 
 export default function RegistrationsPage() {
   const [items, setItems] = useState([]);
@@ -23,6 +26,13 @@ export default function RegistrationsPage() {
 
   const showToast = (type, message) => {
     setToast({ id: Date.now(), type, message });
+    try {
+      pushNotification({
+        type,
+        title: type === "error" ? "Error" : "Notice",
+        message,
+      });
+    } catch {}
     setTimeout(() => setToast(null), 3000);
   };
 
@@ -44,8 +54,9 @@ export default function RegistrationsPage() {
         : [];
       setItems(list);
     } catch (e) {
-      setError(e?.message || "Failed to load registrations");
-      showToast("error", e?.message || "Failed to load registrations");
+      const msg = e?.message || "Failed to load registrations";
+      setError(msg);
+      showToast("error", msg);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -99,6 +110,22 @@ export default function RegistrationsPage() {
               placeholder="Search registrations"
             />
           </div>
+          <ExportMenu
+            rows={visible}
+            columns={[
+              "id",
+              "first_name_en",
+              "middle_name_en",
+              "last_name_en",
+              "first_name_ar",
+              "middle_name_ar",
+              "last_name_ar",
+              "main_phone",
+              "status",
+            ]}
+            filename="registrations"
+            title="Export"
+          />
           <button
             onClick={refresh}
             disabled={isRefreshing}
@@ -124,9 +151,7 @@ export default function RegistrationsPage() {
         {isLoading ? (
           <SkeletonList />
         ) : error ? (
-          <div className="px-5 py-10 text-center text-sm text-red-600">
-            {error}
-          </div>
+          <ErrorAlert message={error} />
         ) : visible.length === 0 ? (
           <div className="px-5 py-10 text-center text-sm text-gray-500">
             No registrations

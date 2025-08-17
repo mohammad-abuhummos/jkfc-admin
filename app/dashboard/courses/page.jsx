@@ -11,6 +11,9 @@ import {
   XMarkIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
+import ExportMenu from "../../ui/ExportMenu";
+import { pushNotification } from "../../ui/Notifications";
+import ErrorAlert from "../../ui/ErrorAlert";
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState([]);
@@ -31,6 +34,13 @@ export default function CoursesPage() {
 
   const showToast = (type, message) => {
     setToast({ id: Date.now(), type, message });
+    try {
+      pushNotification({
+        type,
+        title: type === "error" ? "Error" : "Notice",
+        message,
+      });
+    } catch {}
     setTimeout(() => setToast(null), 3000);
   };
 
@@ -50,7 +60,15 @@ export default function CoursesPage() {
       const list = Array.isArray(json?.data) ? json.data : [];
       setCourses(list);
     } catch (e) {
-      setError(e?.message || "Failed to load courses");
+      const msg = e?.message || "Failed to load courses";
+      setError(msg);
+      try {
+        pushNotification({
+          type: "error",
+          title: "Load courses failed",
+          message: msg,
+        });
+      } catch {}
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -166,6 +184,18 @@ export default function CoursesPage() {
             />
           </div>
           <div className="flex gap-2">
+            <ExportMenu
+              rows={visibleCourses}
+              columns={[
+                "id",
+                "title",
+                "season",
+                "year",
+                "course_schedules_count",
+              ]}
+              filename="courses"
+              title="Export"
+            />
             <select
               value={seasonFilter}
               onChange={(e) => setSeasonFilter(e.target.value)}
@@ -222,9 +252,7 @@ export default function CoursesPage() {
         {isLoading ? (
           <SkeletonList />
         ) : error ? (
-          <div className="px-5 py-10 text-center text-sm text-red-600">
-            {error}
-          </div>
+          <ErrorAlert message={error} />
         ) : visibleCourses.length === 0 ? (
           <div className="px-5 py-10 text-center text-sm text-gray-500">
             No courses
