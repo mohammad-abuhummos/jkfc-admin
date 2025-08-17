@@ -7,6 +7,7 @@ import {
   ExclamationTriangleIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
+import { PaymentBadge } from "../../ui/Badges";
 import ExportMenu from "../../ui/ExportMenu";
 import { pushNotification } from "../../ui/Notifications";
 import ErrorAlert from "../../ui/ErrorAlert";
@@ -168,7 +169,7 @@ export default function PaymentsPage() {
                   {p.amount_due} JOD
                 </div>
                 <div className="col-span-2 text-gray-700 truncate">
-                  {p.status}
+                  <PaymentBadge status={p.status} />
                 </div>
                 <div className="col-span-3 text-right space-x-2">
                   <button

@@ -9,6 +9,7 @@ import {
 import ExportMenu from "../../ui/ExportMenu";
 import { pushNotification } from "../../ui/Notifications";
 import ErrorAlert from "../../ui/ErrorAlert";
+import { StatusBadge } from "../../ui/Badges";
 
 export default function AttendancePage() {
   const [scheduleId, setScheduleId] = useState("");
@@ -191,7 +192,8 @@ export default function AttendancePage() {
                 <div className="col-span-3 text-gray-900 truncate">
                   {r.player_name}
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-2 flex items-center gap-2">
+                  <StatusBadge status={r.status || "-"} />
                   <select
                     value={r.status || ""}
                     onChange={(e) =>

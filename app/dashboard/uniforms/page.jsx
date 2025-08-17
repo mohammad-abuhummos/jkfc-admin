@@ -12,6 +12,7 @@ import {
 import ExportMenu from "../../ui/ExportMenu";
 import { pushNotification } from "../../ui/Notifications";
 import ErrorAlert from "../../ui/ErrorAlert";
+import { StatusBadge, PaymentBadge } from "../../ui/Badges";
 
 export default function UniformsPage() {
   return (
@@ -240,10 +241,10 @@ function UniformRequests() {
                   {r.quantity}
                 </div>
                 <div className="col-span-2 text-gray-700 truncate">
-                  {r.status}
+                  <StatusBadge status={r.status} />
                 </div>
                 <div className="col-span-2 text-gray-700 truncate">
-                  {r?.payment?.status || "-"}
+                  <PaymentBadge status={r?.payment?.status || "-"} />
                 </div>
                 <div className="col-span-3 text-right space-x-2">
                   <button

@@ -7,6 +7,7 @@ import {
   ExclamationTriangleIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
+import { StatusBadge } from "../../ui/Badges";
 import ExportMenu from "../../ui/ExportMenu";
 import { pushNotification } from "../../ui/Notifications";
 import ErrorAlert from "../../ui/ErrorAlert";
@@ -186,7 +187,7 @@ export default function TryoutsPage() {
                   {r.main_phone}
                 </div>
                 <div className="col-span-1 text-gray-700 truncate">
-                  {r.status}
+                  <StatusBadge status={r.status} />
                 </div>
                 <div className="col-span-2 text-right space-x-2">
                   <button

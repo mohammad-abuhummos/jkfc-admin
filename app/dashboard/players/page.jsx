@@ -11,6 +11,7 @@ import {
   XMarkIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
+import { StatusBadge } from "../../ui/Badges";
 import ExportMenu from "../../ui/ExportMenu";
 import { pushNotification } from "../../ui/Notifications";
 import ErrorAlert from "../../ui/ErrorAlert";
@@ -395,22 +396,7 @@ function Avatar({ name }) {
   );
 }
 
-function StatusBadge({ status }) {
-  const styleMap = {
-    active: "bg-emerald-50 text-emerald-700",
-    pending_registration: "bg-amber-50 text-amber-700",
-    pending_tryout: "bg-indigo-50 text-indigo-700",
-    rejected: "bg-red-50 text-red-700",
-  };
-  const style = styleMap[status] || "bg-gray-100 text-gray-700";
-  return (
-    <span
-      className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${style}`}
-    >
-      {status}
-    </span>
-  );
-}
+// StatusBadge from ui/Badges
 
 function SkeletonList() {
   const rows = new Array(6).fill(null);
